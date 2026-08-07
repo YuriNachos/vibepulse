@@ -228,7 +228,7 @@ final class UsageFetcher: UsageFetching, @unchecked Sendable {
     var costByAgent: [String: Double] = [:]
     for dailyRow in dailyRows {
       guard let breakdowns = dailyRow["agentBreakdowns"] as? [[String: Any]] else {
-        throw FetchError.invalidOutput
+        continue
       }
       for breakdown in breakdowns {
         guard
@@ -236,7 +236,7 @@ final class UsageFetcher: UsageFetching, @unchecked Sendable {
           !rawAgent.isEmpty,
           let cost = parseNumber(breakdown["cost"])
         else {
-          throw FetchError.invalidOutput
+          continue
         }
         costByAgent[rawAgent, default: 0] += cost
       }
