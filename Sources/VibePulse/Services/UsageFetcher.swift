@@ -227,11 +227,12 @@ final class UsageFetcher: UsageFetching, @unchecked Sendable {
 
     var costByAgent: [String: Double] = [:]
     for dailyRow in dailyRows {
-      guard let breakdowns = dailyRow["agentBreakdowns"] as? [[String: Any]] else {
+      guard let breakdowns = dailyRow["agentBreakdowns"] as? [Any] else {
         continue
       }
-      for breakdown in breakdowns {
+      for rawBreakdown in breakdowns {
         guard
+          let breakdown = rawBreakdown as? [String: Any],
           let rawAgent = breakdown["agent"] as? String,
           !rawAgent.isEmpty,
           let cost = parseNumber(breakdown["cost"])
