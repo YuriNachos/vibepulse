@@ -271,11 +271,76 @@ final class UsageFetcherTests: XCTestCase {
     XCTAssertEqual(try UsageFetcher.parseDiscoveredAgents(data: data), [])
   }
 
-  func testParseDiscoveredAgentsRejectsMalformedRequiredBreakdownRows() throws {
+  func testParseDiscoveredAgentsSkipsNonObjectBreakdownEntriesAndReturnsValidAgents() throws {
+    let json = """
+      {
+        "daily": [
+          {
+            "date": "2026-08-07",
+            "agentBreakdowns": [
+              { "agent": "claude", "cost": 5.0 },
+              null
+            ]
+          }
+        ]
+      }
+      """
+
+    let agents = try UsageFetcher.parseDiscoveredAgents(
+      data: try XCTUnwrap(json.data(using: .utf8)))
+
+    XCTAssertEqual(agents.map(\.rawValue), ["claude"])
+  }
+
+  func testParseDiscoveredAgentsSkipsMalformedBreakdownEntriesAndReturnsValidAgents() throws {
+    let json = """
+      {
+        "daily": [
+          {
+            "date": "2026-08-07",
+            "agentBreakdowns": [
+              { "agent": "claude", "cost": 5.0 },
+              { "agent": "codex" }
+            ]
+          }
+        ]
+      }
+      """
+
+    let agents = try UsageFetcher.parseDiscoveredAgents(
+      data: try XCTUnwrap(json.data(using: .utf8)))
+
+    XCTAssertEqual(agents.map(\.rawValue), ["claude"])
+  }
+
+  func testParseDiscoveredAgentsSkipsDaysMissingAgentBreakdowns() throws {
+    let json = """
+      {
+        "daily": [
+          {
+            "date": "2026-08-06",
+            "agentBreakdowns": [
+              { "agent": "claude", "cost": 5.0 }
+            ]
+          },
+          {
+            "date": "2026-08-07"
+          }
+        ]
+      }
+      """
+
+    let agents = try UsageFetcher.parseDiscoveredAgents(
+      data: try XCTUnwrap(json.data(using: .utf8)))
+
+    XCTAssertEqual(agents.map(\.rawValue), ["claude"])
+  }
+
+  func testParseDiscoveredAgentsSkipsAllMalformedBreakdownEntriesAndReturnsEmpty() throws {
     let data = try XCTUnwrap(
       #"{"daily":[{"date":"2026-07-02","agentBreakdowns":[{"agent":"future-agent"}]}]}"#
         .data(using: .utf8))
 
-    XCTAssertThrowsError(try UsageFetcher.parseDiscoveredAgents(data: data))
+    XCTAssertEqual(try UsageFetcher.parseDiscoveredAgents(data: data), [])
   }
 }
