@@ -268,6 +268,38 @@ final class UsageFetcherTests: XCTestCase {
     XCTAssertEqual(totals[2].machineBreakdowns?.count, 0)
   }
 
+  func testParseDailyTotalsRejectsNonFiniteCosts() throws {
+    let json = """
+      {
+        "daily": [
+          {
+            "date": "2026-07-02",
+            "totalCost": "NaN",
+            "modelBreakdowns": [
+              { "modelName": "claude-fable-5", "cost": 10.25 },
+              { "modelName": "claude-haiku-4-5-20251001", "cost": "Infinity" }
+            ]
+          },
+          {
+            "date": "2026-07-03",
+            "totalCost": { "microdollars": "Infinity" }
+          },
+          {
+            "date": "2026-07-04",
+            "totalCost": 4.5
+          }
+        ]
+      }
+      """
+    let data = try XCTUnwrap(json.data(using: .utf8))
+
+    let totals = try UsageFetcher.parseDailyTotals(data: data)
+
+    XCTAssertEqual(totals.count, 1)
+    XCTAssertEqual(totals[0].dateKey, "2026-07-04")
+    XCTAssertEqual(totals[0].cost, 4.5, accuracy: 0.001)
+  }
+
   func testParseDiscoveredAgentsSumsThirtyDayBreakdownsAndDropsZeroCostAgents() throws {
     let json = """
       {
