@@ -14,4 +14,18 @@ final class DateHelperTests: XCTestCase {
       XCTAssertEqual(DateHelper.dateKey(for: parsed), key)
     }
   }
+
+  func testNormalizedDateKeyAcceptsCanonicalAndTextualDates() {
+    XCTAssertEqual(DateHelper.normalizedDateKey(from: "2026-07-15"), "2026-07-15")
+    XCTAssertEqual(DateHelper.normalizedDateKey(from: "2024-02-29"), "2024-02-29")
+    XCTAssertEqual(DateHelper.normalizedDateKey(from: "July 2, 2026"), "2026-07-02")
+    XCTAssertEqual(DateHelper.normalizedDateKey(from: "2026/07/15"), "2026-07-15")
+  }
+
+  func testNormalizedDateKeyRejectsInvalidCalendarDates() {
+    // February never has a 30th, and 2026 is not a leap year.
+    XCTAssertNil(DateHelper.normalizedDateKey(from: "2026-02-30"))
+    XCTAssertNil(DateHelper.normalizedDateKey(from: "2026-02-29"))
+    XCTAssertNil(DateHelper.normalizedDateKey(from: "2026-13-01"))
+  }
 }
