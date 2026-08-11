@@ -383,13 +383,17 @@ final class UsageFetcher: UsageFetching, @unchecked Sendable {
       return microdollars / 1_000_000
     }
     if let doubleValue = value as? Double {
-      return doubleValue
+      return doubleValue.isFinite ? doubleValue : nil
     }
     if let number = value as? NSNumber {
-      return number.doubleValue
+      let parsed = number.doubleValue
+      return parsed.isFinite ? parsed : nil
     }
-    if let string = value as? String {
-      return Double(string)
+    if let string = value as? String,
+      let parsed = Double(string),
+      parsed.isFinite
+    {
+      return parsed
     }
     return nil
   }
