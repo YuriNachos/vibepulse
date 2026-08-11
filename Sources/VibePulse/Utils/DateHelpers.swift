@@ -7,6 +7,7 @@ enum DateHelper {
     formatter.locale = Locale(identifier: "en_US_POSIX")
     formatter.timeZone = TimeZone.current
     formatter.dateFormat = "yyyy-MM-dd"
+    formatter.isLenient = false
     return formatter
   }()
 
@@ -25,6 +26,7 @@ enum DateHelper {
       formatter.locale = Locale(identifier: "en_US_POSIX")
       formatter.timeZone = TimeZone.current
       formatter.dateFormat = format
+      formatter.isLenient = false
       return formatter
     }
   }()
