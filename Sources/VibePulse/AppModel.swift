@@ -41,6 +41,13 @@ final class AppModel: ObservableObject {
       )
     }
   }
+  @Published var agentsviewServerURL: String {
+    didSet {
+      defaults.set(
+        agentsviewServerURL, forKey: DefaultsKey.agentsviewServerURL
+      )
+    }
+  }
   @Published private(set) var discoveredAgents: [UsageAgent]
   @Published private(set) var disabledAgentIDs: Set<String>
 
@@ -82,6 +89,8 @@ final class AppModel: ObservableObject {
 
     agentsviewPath =
       defaults.string(forKey: DefaultsKey.agentsviewPath) ?? ""
+    agentsviewServerURL =
+      defaults.string(forKey: DefaultsKey.agentsviewServerURL) ?? ""
     startAtLogin = Self.currentLoginItemEnabled()
 
     if SMAppService.mainApp.status == .requiresApproval {
@@ -393,6 +402,7 @@ final class AppModel: ObservableObject {
     static let refreshMinutes = "refreshMinutes"
     static let refreshInterval = "refreshInterval"
     static let agentsviewPath = "agentsviewPath"
+    static let agentsviewServerURL = "agentsviewServerURL"
     static let maintenanceMode = "maintenanceMode"
     static let lastMaintenanceAt = "lastMaintenanceAt"
   }

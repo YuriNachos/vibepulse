@@ -78,6 +78,25 @@ struct SettingsView: View {
 
   private var dependenciesSection: some View {
     settingsSection("Dependencies") {
+      settingsRow("agentsview server", alignment: .top) {
+        VStack(alignment: .leading, spacing: 6) {
+          HStack(spacing: 8) {
+            TextField(
+              "Leave blank to use the local CLI",
+              text: $model.agentsviewServerURL
+            )
+            .textFieldStyle(.roundedBorder)
+
+            Button("Clear") {
+              model.agentsviewServerURL = ""
+            }
+            .disabled(model.agentsviewServerURL.isEmpty)
+          }
+
+          helperText("Example: http://127.0.0.1:18080")
+        }
+      }
+
       settingsRow("agentsview path", alignment: .top) {
         VStack(alignment: .leading, spacing: 6) {
           HStack(spacing: 8) {
@@ -93,7 +112,7 @@ struct SettingsView: View {
             .disabled(model.agentsviewPath.isEmpty)
           }
 
-          helperText("Example: ~/.local/bin/agentsview")
+          helperText("Used when no agentsview server is configured.")
         }
       }
     }

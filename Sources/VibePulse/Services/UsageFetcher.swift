@@ -10,6 +10,7 @@ final class UsageFetcher: UsageFetching, @unchecked Sendable {
     case commandFailed(String)
     case invalidOutput
     case agentsviewNotFound(String?)
+    case invalidServerURL(String)
   }
 
   private let commandRunner: (([String]) throws -> Data)?
@@ -20,7 +21,9 @@ final class UsageFetcher: UsageFetching, @unchecked Sendable {
 
   func discoverAgents() throws -> [UsageAgent] {
     try withRetry {
-      let data = try executeCommand(UsageAgent.discoveryCommand)
+      let data = try fetchUsageData(
+        command: UsageAgent.discoveryCommand,
+        agent: nil)
       return try Self.parseDiscoveredAgents(data: data)
     }
   }
@@ -29,7 +32,9 @@ final class UsageFetcher: UsageFetching, @unchecked Sendable {
     try withRetry {
       let data: Data
       do {
-        data = try executeCommand(tool.dailyCommand)
+        data = try fetchUsageData(
+          command: tool.dailyCommand,
+          agent: tool.rawValue)
       } catch FetchError.commandFailed(let output)
         where Self.isUnsupportedBreakdownError(output)
       {
@@ -37,6 +42,59 @@ final class UsageFetcher: UsageFetching, @unchecked Sendable {
       }
       return try Self.parseDailyTotals(data: data)
     }
+  }
+
+  private func fetchUsageData(command: [String], agent: String?) throws -> Data {
+    let configuredURL =
+      UserDefaults.standard.string(forKey: "agentsviewServerURL")?
+      .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    guard !configuredURL.isEmpty else {
+      return try executeCommand(command)
+    }
+
+    let url = try Self.makeServerURL(
+      configuredURL: configuredURL,
+      agent: agent,
+      now: Date(),
+      timeZone: TimeZone.current)
+    return try Data(contentsOf: url)
+  }
+
+  static func makeServerURL(
+    configuredURL: String,
+    agent: String?,
+    now: Date,
+    timeZone: TimeZone
+  ) throws -> URL {
+    let baseURL = configuredURL.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+    guard
+      var components = URLComponents(
+        string: baseURL + "/api/v1/usage/summary")
+    else {
+      throw FetchError.invalidServerURL(configuredURL)
+    }
+
+    let formatter = DateFormatter()
+    formatter.calendar = Calendar(identifier: .gregorian)
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.timeZone = timeZone
+    formatter.dateFormat = "yyyy-MM-dd"
+    let from = formatter.string(
+      from: now.addingTimeInterval(-30 * 24 * 60 * 60))
+
+    components.queryItems = [
+      URLQueryItem(name: "from", value: from),
+      URLQueryItem(name: "no_default_range", value: "true"),
+      URLQueryItem(name: "timezone", value: timeZone.identifier),
+      URLQueryItem(name: "breakdowns", value: "true"),
+    ]
+    if let agent {
+      components.queryItems?.append(URLQueryItem(name: "agent", value: agent))
+    }
+    guard let url = components.url else {
+      throw FetchError.invalidServerURL(configuredURL)
+    }
+    return url
   }
 
   private func withRetry<T>(_ operation: () throws -> T) throws -> T {
@@ -354,6 +412,8 @@ extension UsageFetcher.FetchError: LocalizedError {
         "agentsview not found. "
         + "Install it (https://agentsview.io) "
         + "or set the path in Settings."
+    case .invalidServerURL(let url):
+      return "Invalid agentsview server URL: \(url)"
     }
   }
 }

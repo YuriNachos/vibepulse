@@ -49,7 +49,7 @@ curl -fsSL https://agentsview.io/install.sh | bash
 
 This installs `agentsview` to `~/.local/bin/agentsview` or `/usr/local/bin/agentsview`.
 
-VibePulse runs outside your shell, so if `agentsview` is installed to a non-standard location, set the path in **Settings -> Dependencies**.
+VibePulse runs outside your shell, so if `agentsview` is installed to a non-standard location, set the path in **Settings -> Dependencies**. To read from a PostgreSQL-backed `agentsview pg serve` instance instead, set its URL there; for example, `http://127.0.0.1:18080`.
 
 ## Settings
 
@@ -59,7 +59,7 @@ VibePulse runs outside your shell, so if `agentsview` is installed to a non-stan
 
 - **Data Sources**: VibePulse discovers agents with positive-cost usage in the past 30 days. Turning one off hides it from totals and charts without stopping imports or deleting history.
 - **Startup**: Start VibePulse at login (macOS may require approval).
-- **Dependencies**: Set a custom `agentsview` path if needed.
+- **Dependencies**: Set an `agentsview pg serve` URL, or a custom local `agentsview` path.
 - **Refresh**: Choose how often the app refreshes (5m, 15m, 1h, 4h, 1d).
 - **Data Maintenance**: Normalize historical data and rerun import fixes.
 
@@ -68,7 +68,7 @@ VibePulse runs outside your shell, so if `agentsview` is installed to a non-stan
 - All usage data stays local on your machine.
 - The database lives at `~/Library/Application Support/VibePulse/vibepulse.sqlite`.
 - VibePulse has no analytics or telemetry.
-- It runs one aggregate 30-day agentsview usage report to discover local agents, then filtered per-agent reports to store their usage.
+- It runs one aggregate 30-day agentsview usage report to discover agents, then filtered per-agent reports to store their usage. Reports come from the configured server when present, otherwise from the local CLI.
 
 ## Troubleshooting
 

@@ -3,6 +3,38 @@ import XCTest
 @testable import VibePulse
 
 final class UsageFetcherTests: XCTestCase {
+  func testServerURLConstrainsDiscoveryAndAgentRequestsToThirtyDays() throws {
+    let now = try XCTUnwrap(
+      ISO8601DateFormatter().date(from: "2026-08-10T12:00:00Z"))
+    let timeZone = try XCTUnwrap(TimeZone(identifier: "America/New_York"))
+
+    let discoveryURL = try UsageFetcher.makeServerURL(
+      configuredURL: "http://127.0.0.1:18080",
+      agent: nil,
+      now: now,
+      timeZone: timeZone)
+    let agentURL = try UsageFetcher.makeServerURL(
+      configuredURL: "http://127.0.0.1:18080",
+      agent: "claude",
+      now: now,
+      timeZone: timeZone)
+
+    for url in [discoveryURL, agentURL] {
+      let components = URLComponents(
+        url: url, resolvingAgainstBaseURL: false)
+      let queryItems = try XCTUnwrap(components?.queryItems)
+      XCTAssertEqual(queryItems.first { $0.name == "from" }?.value, "2026-07-11")
+      XCTAssertEqual(queryItems.first { $0.name == "no_default_range" }?.value, "true")
+    }
+    XCTAssertNil(
+      URLComponents(url: discoveryURL, resolvingAgainstBaseURL: false)?.queryItems?
+        .first { $0.name == "agent" })
+    XCTAssertEqual(
+      URLComponents(url: agentURL, resolvingAgainstBaseURL: false)?.queryItems?
+        .first { $0.name == "agent" }?.value,
+      "claude")
+  }
+
   func testFetchDailyTotalsRetriesWithoutBreakdownWhenFlagIsUnsupported() throws {
     let json = """
       {
